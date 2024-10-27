@@ -8,13 +8,13 @@ app.template_folder = 'template'
 
 hosts = {
     "R1": {
-        "host": "192.168.56.102",
+        "host": "192.168.0.44",
         "username": "cisco",
         "password": "cisco",
         "type": "router",
     },
     "SW1": {
-        "host": "192.168.56.102",
+        "host": "192.168.0.34",
         "username": "cisco",
         "password": "cisco",
         "type": "multilayer switch",

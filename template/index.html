@@ -7,11 +7,60 @@
     <script src="/tailwind.js"></script>
 </head>
 <body>
-    <div class="container mx-auto">
-        <div class="flex justify-center">
-            <div class="w-1/2">
-                <h1 class="text-4xl font-bold text-center">Hello World</h1>
-                <p class="text-center">Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos.</p>
+    <div class="container mx-auto p-4">
+        <div class="grid grid-cols-12 gap-4">
+            <div class="flex flex-col gap-4 col-span-3">
+                <h4 class="text-2xl text-center">Host lists</h4>
+                <div class="flex flex-col gap-2 w-full" id="host-list"></div>
+            </div>
+            <div class="flex flex-col gap-4 col-span-9">
+                <h4 class="text-2xl text-center">Host details</h4>
+                <!-- ips -->
+                <div class="flex flex-col gap-2">
+                    <h5 class="text-xl">IPs</h5>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Interface</th>
+                                <th>IP</th>
+                                <th>Status</th>
+                                <th>Protocol</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ip-list"></tbody>
+                    </table>
+                </div>
+
+                <!-- vlans -->
+                <div class="flex flex-col gap-2">
+                    <h5 class="text-xl">VLANs</h5>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>VLAN ID</th>
+                                <th>Name</th>
+                                <th>Status</th>
+                                <th>Interface</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vlan-list"></tbody>
+                    </table>
+                </div>
+
+                <!-- routes -->
+                <div class="flex flex-col gap-2">
+                    <h5 class="text-xl">Routes</h5>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Network</th>
+                                <th>Nexthop/Interface</th>
+                            </tr>
+                        </thead>
+                        <tbody id="route-list"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

@@ -11,6 +11,11 @@ app.use(bodyParser.json());
 
 const hosts = [];
 
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method}:${req.url}`);
+    next();
+});
+
 app.get('/snmp/:host/interfaces', (req, res) => {
     const { host } = req.params;
     const session = new snmp.Session({ host, community: 'public' });
@@ -90,4 +95,4 @@ app.patch('/snmp/:host/:int/:status', (req, res) => {
         .catch((error) => res.status(500).json({ error: error.message }))
 })
 
-app.listen(3000, () => console.log('Server running on port 3000'));
+app.listen(5001, () => console.log('Server running on port 5001'));

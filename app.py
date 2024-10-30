@@ -18,7 +18,8 @@ hosts = {
         "username": "cisco",
         "password": "cisco",
         "type": "multilayer switch",
-    }
+    },
+    "SW2": {}
 }
 
 @app.route('/')
@@ -53,7 +54,7 @@ def get_ips(host):
     # return the interfaces
     return flask.jsonify({ "data": output.split("\n")[1:] })
 
-@app.route('/api/<host>/ips/<interface>', methods=["GET", "POST", "PATCH"])
+@app.route('/api/<host>/ips/<interface>', methods=["GET", "POST", "PATCH", "PUT"])
 def ips(host, interface):
     # get parameters
     params = flask.request.args
@@ -65,8 +66,8 @@ def ips(host, interface):
     if not host:
         return flask.jsonify({ "error": "Host not found" })
 
-    interface = interface.replace("n", "/")
-    print(interface)
+    # interface: str = interface.replace("p", "/")
+    # print(interface)
 
     # connect to the host
     conn = netmiko.ConnectHandler(
@@ -81,23 +82,26 @@ def ips(host, interface):
         # get the interface details
         output = conn.send_command(f"show ip interface {interface}")
     elif flask.request.method == "POST":
+        interface = interface.replace("p", "/")
+        body = flask.request.json
         # enable the interface
         if host["type"] == "multilayer switch":
-            output = conn.send_config_set([f"interface {interface}", "no switchport"])
+            output = conn.send_config_set([f"interface {interface.replace("p", "/")}", "no switchport"])
         
-        output = conn.send_config_set([f"interface {interface}", "no shutdown"])
+        output = conn.send_config_set([f"interface {interface.replace("p", "/")}", f"ip addr {body['ip']} {body['mask']}", "no shutdown"])
         pass
     elif flask.request.method == "PATCH":
         # check if the interface is shutdown or not
         output = conn.send_command(f"show ip interface {interface}")
         if "administratively down" in output:
-            output = conn.send_config_set([f"interface {interface}", "no shutdown"])
+            output = conn.send_config_set(["conf t", f"interface {interface}", "no shutdown"])
         else:
-            output = conn.send_config_set([f"interface {interface}", "shutdown"])
+            output = conn.send_config_set(["conf t", f"interface {interface}", "shutdown"])
 
     conn.disconnect()
 
     # return the output
+    print(output)
     return flask.jsonify({ "data": output })
 
 @app.route('/api/<host>/routes', methods=["GET", "POST", "DELETE"])
@@ -186,4 +190,4 @@ def switchport(host):
     return flask.jsonify({ "data": output })
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)

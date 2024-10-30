@@ -1,7 +1,7 @@
 import os, sys, threading
 
 def run_flask():
-    os.system("python app.py")
+    os.system("flask --app app run --debug")
 
 def run_express():
     os.system("node server.js")

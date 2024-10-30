@@ -3,6 +3,7 @@ let selectedHost = null;
 
 const ips = [];
 const vlans = [];
+const routes = [];
 
 function fetchHosts() {
     fetch('/api/hosts')
@@ -17,6 +18,8 @@ function fetchHosts() {
 }
 
 function fetchIps(host) {
+    // Clear ips
+    ips.splice(0, ips.length);
     fetch(`/api/${host}/ips`)
         .then(response => response.json())
         .then(response => {
@@ -36,6 +39,8 @@ function fetchIps(host) {
 }
 
 function fetchVlans(host) {
+    // Clear vlans
+    vlans.splice(0, vlans.length);
     fetch(`/api/${host}/vlans`)
         .then(response => response.json())
         .then(response => {
@@ -73,6 +78,7 @@ function fetchVlans(host) {
 }
 
 function fetchRoutes(host) {
+    // Clear routes
     fetch(`/api/${host}/routes`)
         .then(response => response.json())
         .then(response => {
@@ -114,6 +120,27 @@ function renderIps() {
             td.classList.add('text-center');
             tr.appendChild(td);
         });
+
+        const editButton = document.createElement('button');
+        editButton.innerHTML = 'Edit';
+        editButton.classList.add('btn', 'btn-primary', 'mx-2');
+        editButton.onclick = () => {
+            const newIp = prompt('Enter new IP address:', ip.ip);
+            const newMask = prompt('Enter new subnet mask:', ip.mask);
+            if (newIp && newMask) {
+                fetch(`/api/${selectedHost}/ips/${ip.int.replace('/', 'p')}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ ip: newIp, mask: newMask })
+                })
+                    .then(() => fetchIps(selectedHost))
+                    .catch(console.error);
+            }
+        }
+
+        tr.appendChild(editButton);
 
         ipList.appendChild(tr);
     });

@@ -8,6 +8,9 @@ def run_express():
 
 # Check if user run the main.py file
 if __name__ == "__main__":
+    os.system("pip install -r requirements.txt")
+    os.system("npm install")
+    
     threading.Thread(target=run_flask).start()
     threading.Thread(target=run_express).start()
     

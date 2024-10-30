@@ -18,8 +18,7 @@ hosts = {
         "username": "cisco",
         "password": "cisco",
         "type": "multilayer switch",
-    },
-    "SW2": {}
+    }
 }
 
 @app.route('/')

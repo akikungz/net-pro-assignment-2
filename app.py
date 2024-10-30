@@ -7,6 +7,8 @@ app = flask.Flask(__name__, static_folder='static', static_url_path='/')
 # set template folder
 app.template_folder = 'template'
 
+# type = "router" for routers, "multilayer switch" for multilayer switches, "switch" for layer 2 switches
+
 hosts = {
     "R1": {
         "host": "192.168.0.44",

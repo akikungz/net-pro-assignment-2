@@ -107,6 +107,14 @@ function renderHosts() {
         div.classList.add('w-full', 'p-2', 'cursor-pointer', 'hover:bg-gray-200', 'rounded');
         hostList.appendChild(div);
     });
+
+    const ipSelect = document.getElementById('ip');
+    hosts.forEach(host => {
+        const option = document.createElement('option');
+        option.value = host;
+        option.innerHTML = host;
+        ipSelect.appendChild(option);
+    });
 }
 
 function renderIps() {
@@ -159,8 +167,51 @@ function renderVlans() {
             tr.appendChild(td);
         });
 
+        const editButton = document.createElement('button');
+        editButton.innerHTML = 'Edit';
+        editButton.classList.add('btn', 'btn-primary', 'mx-2');
+
+        editButton.onclick = () => {
+            const newVlanName = prompt('Enter new VLAN name:', vlan.VLAN_Name);
+            if (newVlanName) {
+                fetch(`/api/${selectedHost}/vlans`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name: newVlanName, id: vlan.VLAN_ID })
+                })
+                    .then(() => fetchVlans(selectedHost))
+                    .catch(console.error);
+            }
+        }
+
         vlanList.appendChild(tr);
     });
+
+    const vlanElement = document.getElementById('vlans');
+    if (document.getElementById('add-vlan-button')) return;
+    const addVlanButton = document.createElement('button');
+    addVlanButton.innerHTML = 'Add VLAN';
+    addVlanButton.id = 'add-vlan-button';
+    addVlanButton.classList.add('btn', 'btn-primary', 'mx-2');
+    addVlanButton.onclick = () => {
+        const vlanId = prompt('Enter VLAN ID:');
+        const vlanName = prompt('Enter VLAN name:');
+        if (vlanName) {
+            fetch(`/api/${selectedHost}/vlans`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name: vlanName, id: vlanId })
+            })
+                .then(() => fetchVlans(selectedHost))
+                .catch(console.error);
+        }
+    }
+
+    vlanElement.appendChild(addVlanButton);
 }
 
 function parseRoutingTableToJson(text) {
@@ -219,19 +270,103 @@ function renderRoutes() {
 
     console.log(Routes, GatewayOfLastResort);
 
-    Routes.filter((_, i) => i > 0).forEach(route => {
+    Routes.forEach(route => {
         const tr = document.createElement('tr');
-        Object.keys(route)
+        const key = Object.keys(route)
             .filter(key => key == 'Code' || key == 'Network' || key == 'Next_Hop' || key == 'Interface')
-            .forEach(key => {
+            .map(key => {
                 const td = document.createElement('td');
                 td.innerHTML = route[key];
                 td.classList.add('text-center');
                 tr.appendChild(td);
+
+                return key;
             });
+
+        if (!['C', 'L'].includes(route.Code)) {
+            const deleteButton = document.createElement('button');
+            deleteButton.innerHTML = 'Delete';
+            deleteButton.classList.add('btn', 'btn-danger', 'mx-2');
+
+            network = route.Network;
+
+            network = network.split('/');
+
+            deleteButton.onclick = () => {
+                const data = { 
+                    network: network[0], 
+                    mask: getSubnetMask(route.Network), 
+                    nextHop: route.Next_Hop 
+                }
+
+                console.log(data);
+                fetch(`/api/${selectedHost}/routes`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+                    .then(() => fetchRoutes(selectedHost))
+                    .catch(console.error);
+            }
+
+            tr.appendChild(deleteButton);
+        }
 
         routeList.appendChild(tr);
     });
+
+    const routeElement = document.getElementById('routes');
+    if (document.getElementById('add-route-button')) return;
+
+    const addRouteButton = document.createElement('button');
+    addRouteButton.innerHTML = 'Add Route';
+    addRouteButton.id = 'add-route-button';
+    addRouteButton.classList.add('btn', 'btn-primary', 'mx-2');
+    addRouteButton.onclick = () => {
+        const network = prompt('Enter network:');
+        const mask = prompt('Enter mask:');
+        const nextHop = prompt('Enter next hop:');
+        if (network && mask && nextHop) {
+            fetch(`/api/${selectedHost}/routes`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ network, mask, nextHop })
+            })
+                .then(() => fetchRoutes(selectedHost))
+                .catch(console.error);
+        }
+    }
+
+    routeElement.appendChild(addRouteButton);
+}
+
+function getSubnetMask(subnet) {
+    const number = parseInt(subnet.split('/')[1]);
+    let mask = '';
+
+    if (isNaN(number)) return null;
+
+    if (number > 32) return null;
+
+    // convert number to binary
+    for (let i = 0; i < 32; i++) {
+        if (i < number) {
+            mask += '1';
+        } else {
+            mask += '0';
+        }
+    }
+
+    const octets = [];
+    for (let i = 0; i < 4; i++) {
+        octets.push(parseInt(mask.slice(i * 8, (i + 1) * 8), 2));
+    }
+
+    return octets.join('.');
 }
 
 document.onload = fetchHosts();

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <script src="/tailwind.js"></script>
+    <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
     <div class="container mx-auto p-4">
@@ -30,11 +31,10 @@
                         </thead>
                         <tbody id="ip-list"></tbody>
                     </table>
-                    <div id="edit-ip"></div>
                 </div>
 
                 <!-- vlans -->
-                <div class="flex flex-col gap-2">
+                <div class="flex flex-col gap-2" id="vlans">
                     <h5 class="text-xl">VLANs</h5>
                     <table class="table">
                         <thead>
@@ -48,11 +48,11 @@
                         </thead>
                         <tbody id="vlan-list"></tbody>
                     </table>
-                    <div id="edit-vlan"></div>
+                    <div id="add-vlan"></div>
                 </div>
 
                 <!-- routes -->
-                <div class="flex flex-col gap-2">
+                <div class="flex flex-col gap-2" id="routes">
                     <h5 class="text-xl">Routes</h5>
                     <table class="table">
                         <thead>
@@ -65,11 +65,97 @@
                         </thead>
                         <tbody id="route-list"></tbody>
                     </table>
-                    <div id="edit-route"></div>
                 </div>
             </div>
         </div>
     </div>
+
+    <div class="container">
+        <h1>SNMP Interface Control</h1>
+        <!-- <input type="text" id="ip" placeholder="Device IP Address" /> -->
+        <select id="ip"></select>
+        <input type="text" id="community" placeholder="Community String" />
+        <button id="load-device-info">Load Device Info</button>
+
+        <h2 id="device-name">Device Name: </h2> <!-- Display device name here -->
+        <h2>Switch Control</h2>
+        <div id="switch-ports">
+            <!-- Ports will be created here -->
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('load-device-info').addEventListener('click', async () => {
+            const ip = document.getElementById('ip').value;
+            const community = document.getElementById('community').value;
+
+            // Fetch the device name
+            const deviceResponse = await fetch(`/snmp/device-name/${ip}/${community}`);
+            const deviceData = await deviceResponse.json();
+
+            if (deviceData.error) {
+                alert(deviceData.error);
+                return;
+            }
+
+            // Display the device name
+            document.getElementById('device-name').textContent = `Device Name: ${deviceData.device_name}`;
+
+            // Fetch and display the ports
+            const portsResponse = await fetch(`/snmp/ports/${ip}/${community}`);
+            const ports = await portsResponse.json();
+            const switchPortsDiv = document.getElementById('switch-ports');
+            switchPortsDiv.innerHTML = ''; // Clear previous ports
+
+            if (ports.error) {
+                alert(ports.error);
+                return;
+            }
+
+            for (const [portIndex, portData] of Object.entries(ports)) {
+                const portDiv = document.createElement('div');
+                const portName = portData.name || 'Unknown Port'; // Fallback if name is missing
+                portDiv.className = portData.status === '1' ? 'port up' : 'port down'; // Initial status
+                portDiv.textContent = `Port ${portName} (Port ${portIndex}) - ${portData.status === '1' ? 'Up' : 'Down'}`;
+                portDiv.dataset.port = portIndex; // Store port number
+                portDiv.dataset.name = portName; // Store port name
+                portDiv.addEventListener('click', togglePort);
+                switchPortsDiv.appendChild(portDiv);
+            }
+        });
+
+        async function togglePort(event) {
+            const portDiv = event.currentTarget;
+            const port = portDiv.dataset.port;
+            const portName = portDiv.dataset.name; // Retrieve the port name
+            const ip = document.getElementById('ip').value;
+            const community = document.getElementById('community').value;
+            const currentStatus = portDiv.classList.contains('up') ? 'down' : 'up';
+
+            const response = await fetch(`/snmp/control/${ip}/${community}/${port}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: currentStatus })
+            });
+            const data = await response.json();
+            if (data.error) {
+                alert(data.error);
+            } else {
+                // Toggle UI
+                if (currentStatus === 'up') {
+                    portDiv.classList.remove('down');
+                    portDiv.classList.add('up');
+                    portDiv.textContent = `Port ${portName} (Port ${port}) - Up`; // Display port name
+                } else {
+                    portDiv.classList.remove('up');
+                    portDiv.classList.add('down');
+                    portDiv.textContent = `Port ${portName} (Port ${port}) - Down`; // Display port name
+                }
+            }
+        }
+    </script>
 
     <script src="main.js"></script>
 </body>
